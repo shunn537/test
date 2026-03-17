@@ -1,2 +1,116 @@
-池澄のテスト<br>
-<H1>池澄のテスト2</H1>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ガチャゲーム</title>
+<style>
+body{
+    font-family: sans-serif;
+    text-align:center;
+    background: linear-gradient(135deg,#6a9cff,#a4d3ff);
+    color:white;
+}
+
+h1{
+    margin-top:40px;
+}
+
+#result{
+    margin:30px;
+    font-size:30px;
+    font-weight:bold;
+}
+
+button{
+    font-size:20px;
+    padding:15px 30px;
+    border:none;
+    border-radius:10px;
+    background:gold;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+button:hover{
+    transform:scale(1.1);
+}
+
+.card{
+    margin:20px auto;
+    width:200px;
+    height:250px;
+    border-radius:15px;
+    background:white;
+    color:black;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    font-size:24px;
+    box-shadow:0 0 15px rgba(0,0,0,0.3);
+}
+
+.rarity{
+    font-size:18px;
+    margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎮 スマホ風ガチャゲーム</h1>
+
+<div id="result">ボタンを押してガチャ！</div>
+
+<div id="cardArea"></div>
+
+<button onclick="gacha()">ガチャを回す</button>
+
+<script>
+
+const characters = [
+ {name:"勇者", rarity:"SSR", rate:3},
+ {name:"ドラゴン", rarity:"SSR", rate:2},
+ {name:"魔法使い", rarity:"SR", rate:10},
+ {name:"騎士", rarity:"SR", rate:15},
+ {name:"スライム", rarity:"R", rate:35},
+ {name:"村人", rarity:"R", rate:35}
+];
+
+function gacha(){
+
+    let totalRate = characters.reduce((sum,c)=>sum+c.rate,0);
+    let rand = Math.random()*totalRate;
+
+    let sum = 0;
+    let result;
+
+    for(let c of characters){
+        sum += c.rate;
+        if(rand < sum){
+            result = c;
+            break;
+        }
+    }
+
+    let color = "black";
+    if(result.rarity==="SSR") color="red";
+    if(result.rarity==="SR") color="purple";
+    if(result.rarity==="R") color="gray";
+
+    document.getElementById("cardArea").innerHTML =
+        `<div class="card">
+            ${result.name}
+            <div class="rarity" style="color:${color}">
+            ${result.rarity}
+            </div>
+        </div>`;
+
+    document.getElementById("result").innerText="ガチャ結果！";
+}
+
+</script>
+
+</body>
+</html>
