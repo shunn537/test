@@ -5,182 +5,222 @@
 <title>マリオ風ゲーム</title>
 
 <style>
+
 body{
 margin:0;
 overflow:hidden;
+background:#5cc7ff;
 font-family:sans-serif;
-background:#87CEEB;
 }
 
-#game{
-position:relative;
-width:100vw;
-height:400px;
-background:#87CEEB;
-overflow:hidden;
+canvas{
+display:block;
+margin:auto;
+background:#5cc7ff;
 }
 
-#ground{
-position:absolute;
-bottom:0;
-width:100%;
-height:60px;
-background:#2ecc71;
-}
-
-#player{
-position:absolute;
-bottom:60px;
-left:100px;
-width:40px;
-height:40px;
-background:red;
-border-radius:5px;
-}
-
-.enemy{
-position:absolute;
-bottom:60px;
-width:40px;
-height:40px;
-background:brown;
-right:-40px;
-}
-
-#score{
+#info{
 position:absolute;
 top:10px;
 left:10px;
-font-size:20px;
 color:white;
+font-size:20px;
 }
+
 </style>
 </head>
 
 <body>
 
-<div id="game">
-
-<div id="score">Score: 0</div>
-
-<div id="player"></div>
-
-<div id="ground"></div>
-
-</div>
+<div id="info">コイン:0</div>
+<canvas id="game" width="900" height="450"></canvas>
 
 <script>
 
-const player = document.getElementById("player")
-const game = document.getElementById("game")
-const scoreText = document.getElementById("score")
-
-let playerX = 100
-let playerY = 0
-let velocityY = 0
-let gravity = 0.7
-let jumpPower = 14
-let onGround = true
+const canvas = document.getElementById("game")
+const ctx = canvas.getContext("2d")
 
 let keys = {}
 
-let enemies = []
-let score = 0
-let gameOver = false
+document.addEventListener("keydown",e=>keys[e.code]=true)
+document.addEventListener("keyup",e=>keys[e.code]=false)
 
-document.addEventListener("keydown",e=>{
-keys[e.code] = true
+let gravity = 0.6
 
-if(e.code==="Space" && onGround){
-velocityY = jumpPower
-onGround = false
-}
-})
-
-document.addEventListener("keyup",e=>{
-keys[e.code] = false
-})
-
-function createEnemy(){
-
-let enemy = document.createElement("div")
-enemy.classList.add("enemy")
-enemy.style.right = "-40px"
-
-game.appendChild(enemy)
-
-enemies.push({
-element:enemy,
-x:window.innerWidth
-})
-
+let player={
+x:100,
+y:0,
+w:40,
+h:40,
+dx:0,
+dy:0,
+speed:4,
+jump:14,
+ground:false
 }
 
-setInterval(()=>{
-if(!gameOver){
-createEnemy()
+let worldWidth = 3000
+let cameraX = 0
+
+let blocks=[
+{x:200,y:350,w:50,h:50},
+{x:250,y:350,w:50,h:50},
+{x:300,y:350,w:50,h:50},
+
+{x:600,y:300,w:50,h:50},
+{x:650,y:300,w:50,h:50},
+
+{x:1000,y:250,w:50,h:50}
+]
+
+let coins=[
+{x:210,y:310},
+{x:260,y:310},
+{x:610,y:260},
+{x:1010,y:210}
+]
+
+let enemies=[
+{x:500,y:360,w:40,h:40,dx:2},
+{x:900,y:360,w:40,h:40,dx:2}
+]
+
+let coinCount=0
+
+function rect(a,b){
+return(
+a.x<b.x+b.w &&
+a.x+a.w>b.x &&
+a.y<b.y+b.h &&
+a.y+a.h>b.y
+)
 }
-},2000)
 
 function update(){
 
-if(gameOver) return
+player.dx=0
 
-if(keys["ArrowRight"]) playerX += 5
-if(keys["ArrowLeft"]) playerX -= 5
+if(keys["ArrowRight"]) player.dx=player.speed
+if(keys["ArrowLeft"]) player.dx=-player.speed
 
-velocityY -= gravity
-playerY += velocityY
-
-if(playerY <= 0){
-playerY = 0
-velocityY = 0
-onGround = true
+if(keys["Space"] && player.ground){
+player.dy=-player.jump
+player.ground=false
 }
 
-player.style.left = playerX+"px"
-player.style.bottom = (playerY+60)+"px"
+player.dy+=gravity
 
-enemies.forEach((enemy,index)=>{
+player.x+=player.dx
+player.y+=player.dy
 
-enemy.x -= 6
-enemy.element.style.left = enemy.x+"px"
+player.ground=false
 
-let ex = enemy.x
-let ey = 60
-
-let px = playerX
-let py = playerY + 60
-
-if(
-px < ex + 40 &&
-px + 40 > ex &&
-py < ey + 40 &&
-py + 40 > ey
-){
-gameOver = true
-alert("ゲームオーバー！ Score: "+score)
-location.reload()
+if(player.y+player.h>400){
+player.y=400-player.h
+player.dy=0
+player.ground=true
 }
 
-if(enemy.x < -50){
-enemy.element.remove()
-enemies.splice(index,1)
-score++
-scoreText.innerText = "Score: "+score
+blocks.forEach(b=>{
+
+if(rect(player,b)){
+
+if(player.dy>0){
+player.y=b.y-player.h
+player.dy=0
+player.ground=true
+}
+
 }
 
 })
 
-requestAnimationFrame(update)
+enemies.forEach(e=>{
+
+e.x+=e.dx
+
+if(e.x<0||e.x>worldWidth) e.dx*=-1
+
+if(rect(player,e)){
+
+if(player.dy>0){
+e.dead=true
+player.dy=-10
+}else{
+alert("ゲームオーバー")
+location.reload()
 }
 
+}
+
+})
+
+enemies=enemies.filter(e=>!e.dead)
+
+coins.forEach((c,i)=>{
+
+if(
+player.x < c.x+20 &&
+player.x+player.w > c.x &&
+player.y < c.y+20 &&
+player.y+player.h > c.y
+){
+coins.splice(i,1)
+coinCount++
+document.getElementById("info").innerText="コイン:"+coinCount
+}
+
+})
+
+cameraX=player.x-200
+if(cameraX<0) cameraX=0
+if(cameraX>worldWidth-canvas.width) cameraX=worldWidth-canvas.width
+
+}
+
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+ctx.fillStyle="#2ecc71"
+ctx.fillRect(0,400,canvas.width,50)
+
+ctx.fillStyle="brown"
+blocks.forEach(b=>{
+ctx.fillRect(b.x-cameraX,b.y,b.w,b.h)
+})
+
+ctx.fillStyle="yellow"
+coins.forEach(c=>{
+ctx.beginPath()
+ctx.arc(c.x-cameraX,c.y,10,0,Math.PI*2)
+ctx.fill()
+})
+
+ctx.fillStyle="green"
+enemies.forEach(e=>{
+ctx.fillRect(e.x-cameraX,e.y,e.w,e.h)
+})
+
+ctx.fillStyle="red"
+ctx.fillRect(player.x-cameraX,player.y,player.w,player.h)
+
+}
+
+function loop(){
+
 update()
+draw()
+
+requestAnimationFrame(loop)
+
+}
+
+loop()
 
 </script>
 
 </body>
 </html>
-
 
 
